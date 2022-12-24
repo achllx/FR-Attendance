@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <title>Face Recognition Based Attendance System</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: #18191a;
+        color: aliceblue;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .first-content {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .title-text {
+        font-size: 3em;
+      }
+
+      .second-content {
+        width: 90%;
+        background-color: #242526;
+        height: 500px;
+        display: flex;
+        border-radius: 12px;
+      }
+
+      .attendance-container {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+      }
+
+      tr,
+      td {
+        border-bottom: 1px solid #18191a;
+        padding: 8px;
+      }
+
+      .action-container {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+      }
+
+      .action-button {
+        width: 250px;
+        height: 40px;
+        border-radius: 8px;
+        background-color: #3a3b3c;
+        color: #e4e6eb;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 20px;
+      }
+
+      .action-button:hover {
+        background-color: #8e9091;
+        color: #fefefe;
+      }
+
+      .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        /* Stay in place */
+        z-index: 1;
+        /* Sit on top */
+        padding-top: 100px;
+        /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%;
+        /* Full width */
+        height: 100%;
+        /* Full height */
+        overflow: auto;
+        /* Enable scroll if needed */
+        background-color: rgb(0, 0, 0);
+        /* Fallback color */
+        background-color: rgba(0, 0, 0, 0.821);
+        /* Black w/ opacity */
+      }
+
+      /* Modal Content */
+      .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #e4e6eb;
+        width: 30%;
+        height: 400px;
+        color: #18191a;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* The Close Button */
+      .close {
+        color: #717275;
+        float: right;
+        font-size: 28px;
+        height: fit-content;
+        font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .close-container {
+        margin-bottom: 20px;
+        height: fit-content;
+      }
+
+      .form-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      input {
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="first-content">
+      <div class="title-text">Face Recognition Attendance</div>
+      <div>{{datetoday2}} | <span id="clock"></span></div>
+
+      {% if mess%}
+      <div id="mess">{{ mess }}</div>
+      {% endif %}
+    </div>
+
+    <div class="second-content">
+      <div class="attendance-container">
+        <h2>Today's Attendance</h2>
+        <table
+          style="
+            width: 90%;
+            border-collapse: collapse;
+            border: 1px solid #e4e6eb;
+            border-radius: 12px;
+            background-color: #e4e6eb;
+            color: #18191a;
+          "
+        >
+          <tr>
+            <td><b>S No</b></td>
+            <td><b>Name</b></td>
+            <td><b>ID</b></td>
+            <td><b>Time</b></td>
+            <td><b>Location</b></td>
+          </tr>
+          {% if l %} {% for i in range(l) %}
+          <tr>
+            <td>{{ i+1 }}</td>
+            <td>{{ names[i] }}</td>
+            <td>{{ rolls[i] }}</td>
+            <td>{{ times[i] }}</td>
+            <td>{{ location[i] }}</td>
+          </tr>
+          {% endfor %} {% endif %}
+        </table>
+      </div>
+
+      <div class="action-container">
+          <button class="action-button" type="submit" onclick="getLocation()">
+            Take Attendance
+          </button>
+
+        <button class="action-button" style="margin-bottom: 60px" id="myBtn">
+          Add Student
+        </button>
+
+        <!-- <a style="text-decoration: none; max-width: 300px" href="/save">
+          <button class="action-button">Add To DB</button>
+        </a> -->
+      </div>
+    </div>
+
+    <!-- popup modal  -->
+    <div id="myModal" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <div class="close-container">
+          <div class="close">&times;</div>
+        </div>
+
+        <div class="form-container">
+          <form action="/add" method="POST" enctype="multipart/form-data">
+            <h2>Add New User</h2>
+            <label style="font-size: 20px"><b>Enter New User Name*</b></label>
+            <br />
+            <input
+              type="text"
+              id="newusername"
+              name="newusername"
+              style="font-size: 20px; margin-top: 10px; margin-bottom: 10px"
+              required
+            />
+            <br />
+            <label style="font-size: 20px"><b>Enter New User Id*</b></label>
+            <br />
+            <input
+              type="number"
+              id="newusereid"
+              name="newuserid"
+              style="font-size: 20px; margin-top: 10px; margin-bottom: 10px"
+              required
+            />
+            <br />
+            <button
+              style="margin-top: 10px"
+              type="submit"
+              class="action-button"
+            >
+              Add New User
+            </button>
+            <br />
+            <h5 style="margin-top: 10px">
+              <i>Total Users in Database: {{totalreg}}</i>
+            </h5>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var x = document.getElementById("mess");
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(showPosition);
+        } else {
+          x.innerHTML = "Geolocation is not supported by this browser.";
+        }
+      }
+
+      function showPosition(position) {
+        var req = new XMLHttpRequest();
+        var latitude = position.coords.latitude;
+        var longitude = position.coords.longitude;
+        
+        $.ajax({
+          type: "POST",
+          url: "{{ url_for('start')}}",
+          data: {"latitude": latitude, "longitude": longitude},
+        })
+      }
+
+      var clockElement = document.getElementById("clock");
+
+      function clock() {
+        clockElement.textContent = new Date().toString().slice(15, 24);
+      }
+
+      setInterval(clock, 1000);
+
+      var modal = document.getElementById("myModal");
+      var btn = document.getElementById("myBtn");
+      var span = document.getElementsByClassName("close")[0];
+      btn.onclick = function () {
+        modal.style.display = "block";
+      };
+
+      span.onclick = function () {
+        modal.style.display = "none";
+      };
+
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+    </script>
+  </body>
+</html>
